@@ -8,7 +8,7 @@ It will automatically turn off your masternode if it exceeds missed blocks thres
 If you find this project useful and want to thank us you can donate us some coins:
 
 ```
-Mx148e5c32b1a8f6e270ce80793e3f54fc44f098eb
+Mx0d13ae2af1548c60a7691ecf47ed680673d2fe2c
 ```
 
 Or delegate coins to our [FriendsTRUST](https://friendstrust.club) validator:
