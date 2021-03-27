@@ -1,0 +1,27 @@
+telegram:
+  # Leave empty if you don't want to receive Telegram notifications
+  token: ''
+  admins:
+    # You can get your ID from @myidbot
+    # - 12345
+
+minter:
+  testnet: true
+  # You can use any public one since this is required only to generate transactions
+  api_url: http://localhost:8843/v2
+  explorer_api_url: https://explorer-api.testnet.minter.network/api/v2
+  gate_api_url: https://gate-api.testnet.minter.network/api/v2
+  # Public key of validator
+  public_key: ""
+  # Transaction to turn off masternode. Use txgenerate command to generate one
+  transaction_off: ""
+  # Missed blocks threshold before masternode will go off
+  missed_blocks_threshold: 4
+  # Number of seconds to sleep between checking for missed blocks
+  sleep: 1
+  # Removed missed block after the defined amount of signed blocks
+  missed_block_remove_after: 24
+
+prometheus:
+  enabled: false
+  address: :2112

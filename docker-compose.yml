@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:2112:2112"
+    command:
+      - --config=/config.yaml
+      - start
+    volumes:
+      - ./config.yaml:/config.yaml
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M

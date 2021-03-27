@@ -1,0 +1,39 @@
+project_name: minter-sentinel
+
+builds:
+  - goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    targets:
+      - linux_amd64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w
+
+archives:
+  - replacements:
+      linux: Linux
+      386: i386
+      amd64: x86_64
+
+    format_overrides:
+      - goos: windows
+        format: zip
+
+    files:
+      - config.example.yaml
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^*.md:"
