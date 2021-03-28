@@ -27,27 +27,27 @@ func New(address string, logger *logrus.Logger) (*Service, error) {
 	}
 
 	svc.missedBlocksThreshold = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minter_watcher_missed_blocks_threshold",
+		Name: "minter_sentinel_missed_blocks_threshold",
 		Help: "Missed blocks threshold before masternode will go off",
 	})
 
 	svc.sleep = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minter_watcher_sleep",
+		Name: "minter_sentinel_sleep",
 		Help: "Number of seconds to sleep between checking for missed blocks",
 	})
 
 	svc.blocksSigned = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minter_watcher_blocks_signed",
+		Name: "minter_sentinel_blocks_signed",
 		Help: "The total number of signed blocks",
 	})
 
 	svc.blocksMissed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minter_watcher_blocks_missed",
+		Name: "minter_sentinel_blocks_missed",
 		Help: "The total number of missed blocks",
 	})
 
 	svc.blocksMissedCurrent = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "minter_watcher_blocks_missed_current",
+		Name: "minter_sentinel_blocks_missed_current",
 		Help: "The current number of missed blocks",
 	})
 
