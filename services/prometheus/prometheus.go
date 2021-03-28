@@ -14,7 +14,7 @@ type Service struct {
 	logger  *logrus.Logger
 
 	blocksSigned          prometheus.Counter
-	blocksMissed          prometheus.Counter
+	blocksMissedTotal     prometheus.Counter
 	blocksMissedCurrent   prometheus.Gauge
 	missedBlocksThreshold prometheus.Counter
 	sleep                 prometheus.Counter
@@ -41,8 +41,8 @@ func New(address string, logger *logrus.Logger) (*Service, error) {
 		Help: "The total number of signed blocks",
 	})
 
-	svc.blocksMissed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minter_sentinel_blocks_missed",
+	svc.blocksMissedTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "minter_sentinel_blocks_missed_total",
 		Help: "The total number of missed blocks",
 	})
 
@@ -73,7 +73,7 @@ func (s *Service) BlocksSignedIncrement() {
 }
 
 func (s *Service) BlocksMissedIncrement() {
-	s.blocksMissed.Inc()
+	s.blocksMissedTotal.Inc()
 }
 
 func (s *Service) SetBlocksMissedCurrent(value int) {

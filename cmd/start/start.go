@@ -4,11 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"minter-sentinel/config"
-	"minter-sentinel/services/minter/explorer"
-	"minter-sentinel/services/minter/gate"
+	"minter-sentinel/services/minter/node"
 	"minter-sentinel/services/prometheus"
 	"minter-sentinel/services/telegram"
-	"sort"
 	"sync"
 	"time"
 
@@ -29,8 +27,7 @@ type Command struct {
 	missedBlocks []int
 	lastBlock    int
 
-	explorer   *explorer.Service
-	gate       *gate.Service
+	minter     *node.Service
 	telegram   *tgbotapi.BotAPI
 	prometheus *prometheus.Service
 }
@@ -63,20 +60,18 @@ func (cmd *Command) Command() *cli.Command {
 				return errors.New("`transaction_off` not set in configuration file")
 			}
 
-			if len(cmd.config.Minter.GateApiUrl) == 0 {
-				return errors.New("define gate_api_url in configuration file")
+			if len(cmd.config.Minter.NodeApi) == 0 {
+				return errors.New("define at least one node_api in configuration file")
 			}
 
-			if e, err := explorer.New(cmd.config.Minter.ExplorerApiUrl, cmd.log); err != nil {
+			if n, err := node.New(cmd.config.Minter.NodeApi, cmd.config.Minter.Testnet, cmd.log); err != nil {
 				return err
 			} else {
-				cmd.explorer = e
-			}
+				if err := n.Ping(); err != nil {
+					return err
+				}
 
-			if g, err := gate.New(cmd.config.Minter.GateApiUrl, cmd.log); err != nil {
-				return err
-			} else {
-				cmd.gate = g
+				cmd.minter = n
 			}
 
 			if cmd.config.Prometheus.Enabled {
@@ -120,7 +115,7 @@ func (cmd *Command) Command() *cli.Command {
 			}
 
 			if !signed {
-				return errors.New("last block is not signed by validator, start watcher when validator starts signing blocks")
+				return errors.New("last block is not signed by the validator, start watcher when validator starts signing blocks")
 			}
 
 			cmd.lastBlock = lastBlock
@@ -152,7 +147,7 @@ func (cmd *Command) run() error {
 				signed, err := cmd.isSigned(nextHeight)
 
 				if err != nil {
-					if _, ok := err.(*explorer.BlockNotFound); ok {
+					if _, ok := err.(*node.BlockNotFound); ok {
 						cmd.newLogEntry(nextHeight).Debugln("Block not created yet.")
 						continue
 					}
@@ -218,7 +213,7 @@ func (cmd *Command) run() error {
 		if err := cmd.turnOffMasternode(); err != nil {
 			cmd.newLogEntry(cmd.lastBlock).Errorln("Failed to turn off masternode", err)
 
-			cmd.sendBotMessage("🚨 Failed to turn off masternode")
+			go cmd.sendBotMessage("🚨 Failed to turn off masternode")
 
 			return err
 		}
@@ -255,7 +250,7 @@ func (cmd *Command) turnOffMasternode() error {
 
 	go cmd.sendBotMessage("🚨 Setting masternode off...")
 
-	resp, err := cmd.gate.SendTransaction(cmd.config.Minter.TransactionOff)
+	resp, err := cmd.minter.SendTransaction(cmd.config.Minter.TransactionOff)
 
 	if err != nil {
 		return err
@@ -263,43 +258,35 @@ func (cmd *Command) turnOffMasternode() error {
 
 	if resp.Error != nil {
 		cmd.newLogEntry(cmd.lastBlock).Errorln(resp.Error)
-		return errors.New(fmt.Sprintf("[%d] %s", resp.Error.Code, resp.Error.Log))
+		return errors.New(fmt.Sprintf("[%d] %s", resp.Error.Code, resp.Error.Message))
 	}
 
 	return nil
 }
 
 func (cmd *Command) lastBlockHeight() (int, error) {
-	listBlocks, err := cmd.explorer.ListBlocks()
+	status, err := cmd.minter.Status()
 
 	if err != nil {
 		return 0, err
 	}
 
-	items := make([]int, len(listBlocks.Data))
-
-	for i, block := range listBlocks.Data {
-		items[i] = block.Height
-	}
-
-	sort.Ints(items)
-
-	return items[len(items)-1], nil
+	return status.LatestBlockHeight, nil
 }
 
 func (cmd *Command) isSigned(height int) (bool, error) {
-	block, err := cmd.explorer.GetBlock(height)
+	block, err := cmd.minter.GetBlock(height)
 
 	if err != nil {
 		return false, err
 	}
 
-	if len(block.Data.Validators) == 0 {
+	if len(block.Validators) == 0 {
 		return false, NoValidatorsSignedYet
 	}
 
-	for _, validator := range block.Data.Validators {
-		if validator.Validator.PublicKey == cmd.config.Minter.PublicKey && validator.Signed {
+	for _, validator := range block.Validators {
+		if validator.PublicKey == cmd.config.Minter.PublicKey && validator.Signed {
 			return true, nil
 		}
 	}
@@ -314,10 +301,8 @@ func (cmd *Command) cleanupMissedBlocks() {
 
 	var temp []int
 
-	lastHeight := cmd.missedBlocks[len(cmd.missedBlocks)-1]
-
 	for _, height := range cmd.missedBlocks {
-		if lastHeight-height >= cmd.config.Minter.MissedBlockRemoveAfter {
+		if cmd.lastBlock-height < cmd.config.Minter.MissedBlockRemoveAfter {
 			temp = append(temp, height)
 		}
 	}

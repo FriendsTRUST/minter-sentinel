@@ -16,15 +16,13 @@ type Telegram struct {
 }
 
 type Minter struct {
-	Testnet                bool   `yaml:"testnet"`
-	ApiUrl                 string `yaml:"api_url"`
-	ExplorerApiUrl         string `yaml:"explorer_api_url"`
-	GateApiUrl             string `yaml:"gate_api_url"`
-	PublicKey              string `yaml:"public_key"`
-	TransactionOff         string `yaml:"transaction_off"`
-	MissedBlocksThreshold  int    `yaml:"missed_blocks_threshold"`
-	Sleep                  int    `yaml:"sleep"`
-	MissedBlockRemoveAfter int    `yaml:"missed_block_remove_after"`
+	Testnet                bool     `yaml:"testnet"`
+	NodeApi                []string `yaml:"node_api"`
+	PublicKey              string   `yaml:"public_key"`
+	TransactionOff         string   `yaml:"transaction_off"`
+	MissedBlocksThreshold  int      `yaml:"missed_blocks_threshold"`
+	Sleep                  int      `yaml:"sleep"`
+	MissedBlockRemoveAfter int      `yaml:"missed_block_remove_after"`
 }
 
 type Prometheus struct {

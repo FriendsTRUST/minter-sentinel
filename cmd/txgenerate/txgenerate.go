@@ -3,7 +3,7 @@ package txgenerate
 import (
 	"fmt"
 	"minter-sentinel/config"
-	"minter-sentinel/services/minter"
+	"minter-sentinel/services/minter/node"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
@@ -15,7 +15,7 @@ type Command struct {
 	log    *logrus.Logger
 	config *config.Config
 
-	minter *minter.Service
+	minter *node.Service
 }
 
 func New(log *logrus.Logger, config *config.Config) *Command {
@@ -38,7 +38,7 @@ func (cmd *Command) Command() *cli.Command {
 		Name:  "txgenerate",
 		Usage: "Generate transaction to turn off masternode",
 		Action: func(ctx *cli.Context) error {
-			if svc, err := minter.New(cmd.config.Minter.ApiUrl, cmd.config.Minter.Testnet, cmd.log); err != nil {
+			if svc, err := node.New(cmd.config.Minter.NodeApi, cmd.config.Minter.Testnet, cmd.log); err != nil {
 				return err
 			} else {
 				cmd.minter = svc

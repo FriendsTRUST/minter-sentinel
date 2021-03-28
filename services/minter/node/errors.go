@@ -1,4 +1,4 @@
-package explorer
+package node
 
 import "fmt"
 
@@ -11,5 +11,5 @@ func NewBlockNotFoundError(resp *GetBlockResponse) *BlockNotFound {
 }
 
 func (e *BlockNotFound) Error() string {
-	return fmt.Sprintf("%d: %s", *e.resp.Error.Code, *e.resp.Error.Message)
+	return fmt.Sprintf("%d: %s", e.resp.Error.Code, e.resp.Error.Message)
 }

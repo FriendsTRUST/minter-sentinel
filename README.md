@@ -29,7 +29,7 @@ make build
 
 ### Docker 
 
-TODO
+Docker image `friendstrust/minter-sentinel` is available on [Docker Hub](https://hub.docker.com/r/friendstrust/minter-sentinel).
 
 ### Binary
 
@@ -37,7 +37,7 @@ Download the latest release version from https://github.com/friendstrust/minter-
 
 ## Configuration
 
-Create config.yaml based on the config.example.yaml file:
+Create config.yaml based on the config.example.yaml file.
 
 ## Usage
 
@@ -60,7 +60,7 @@ You can do it using `txgenerate` command:
 If you don't want to turn off masternode if missed blocks threshold exceeds add `dry-run` flag to command:
 
 ```bash
-./minter-sentinel --dry-run
+./minter-sentinel start --dry-run
 ```
 
 ## Prometheus
@@ -71,6 +71,6 @@ In addition to the standard Go metrics, custom metrics by the application are ex
 minter_sentinel_missed_blocks_threshold
 minter_sentinel_sleep
 minter_sentinel_blocks_signed
-minter_sentinel_blocks_missed
+minter_sentinel_blocks_missed_total
 minter_sentinel_blocks_missed_current
 ```
