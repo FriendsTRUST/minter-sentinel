@@ -2,7 +2,12 @@ FROM golang:1.16-alpine AS builder
 
 RUN apk update && apk add git ca-certificates tzdata gcc g++
 
-COPY . /
+COPY cmd /cmd
+COPY config /config
+COPY services /services
+COPY go.mod /go.mod
+COPY go.sum /go.sum
+COPY main.go /main.go
 
 WORKDIR /
 

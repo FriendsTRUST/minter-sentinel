@@ -1,5 +1,7 @@
 /.git/
 /.github/
 /.idea/
+/build/
+/dist/
 /vendor/
 config.yaml

@@ -26,6 +26,28 @@ archives:
     files:
       - config.example.yaml
 
+dockers:
+  - goos: linux
+    goarch: amd64
+
+    ids: ["minter-sentinel"]
+
+    image_templates:
+      - "friendstrust/minter-sentinel:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "friendstrust/minter-sentinel:{{ .Major }}.{{ .Minor }}"
+      - "friendstrust/minter-sentinel:{{ .Major }}"
+      - "friendstrust/minter-sentinel:latest"
+
+    dockerfile: Dockerfile
+
+    extra_files:
+      - cmd
+      - config
+      - services
+      - go.mod
+      - go.sum
+      - main.go
+
 checksum:
   name_template: 'checksums.txt'
 
