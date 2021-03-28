@@ -41,7 +41,7 @@ Create config.yaml based on the config.example.yaml file:
 
 ## Usage
 
-## Transaction Generator
+### Transaction Generator
 
 Before starting watcher, you need to generate transaction to turn off your masternode. 
 
@@ -51,7 +51,7 @@ You can do it using `txgenerate` command:
 ./minter-sentinel txgenerate
 ```
 
-## Watcher
+### Watcher
 
 ```bash
 ./minter-sentinel start
@@ -63,3 +63,14 @@ If you don't want to turn off masternode if missed blocks threshold exceeds add 
 ./minter-sentinel --dry-run
 ```
 
+## Prometheus
+
+In addition to the standard Go metrics, custom metrics by the application are exported:
+
+```text
+minter_sentinel_missed_blocks_threshold
+minter_sentinel_sleep
+minter_sentinel_blocks_signed
+minter_sentinel_blocks_missed
+minter_sentinel_blocks_missed_current
+```
