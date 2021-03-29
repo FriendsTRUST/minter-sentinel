@@ -23,9 +23,10 @@ type Command struct {
 
 	wg sync.WaitGroup
 
-	dryRun       bool
-	missedBlocks []int
-	lastBlock    int
+	dryRun         bool
+	missedBlocks   []int
+	lastBlock      int
+	controlAddress string
 
 	minter     *node.Service
 	telegram   *tgbotapi.BotAPI
@@ -56,8 +57,8 @@ func (cmd *Command) Command() *cli.Command {
 		Action: func(ctx *cli.Context) error {
 			cmd.dryRun = ctx.Bool("dry-run")
 
-			if !cmd.dryRun && len(cmd.config.Minter.TransactionOff) == 0 {
-				return errors.New("`transaction_off` not set in configuration file")
+			if !cmd.dryRun && len(cmd.config.Minter.TransactionOff) == 0 && len(cmd.config.Minter.Seeds) == 0 {
+				return errors.New("`transaction_off` or `seeds` are not set in configuration file")
 			}
 
 			if len(cmd.config.Minter.NodeApi) == 0 {
@@ -102,10 +103,36 @@ func (cmd *Command) Command() *cli.Command {
 				cmd.log.Warn("Telegram token not set. Notifications will not be sent")
 			}
 
+			candidate, err := cmd.minter.GetCandidate(cmd.config.Minter.PublicKey)
+
+			if err != nil {
+				return err
+			}
+
 			lastBlock, err := cmd.lastBlockHeight()
 
 			if err != nil {
 				return err
+			}
+
+			if candidate.JailedUntil > 0 && candidate.JailedUntil > lastBlock {
+				return errors.New(
+					fmt.Sprintf(
+						"candidate is jailed until block %d, current block: %d, blocks until unjail: %d (approx. %d sec.)",
+						candidate.JailedUntil,
+						lastBlock,
+						candidate.JailedUntil-lastBlock,
+						(candidate.JailedUntil-lastBlock)*5,
+					),
+				)
+			}
+
+			if !candidate.Validator {
+				return errors.New("candidate is not a validator yet")
+			}
+
+			if candidate.Status != 2 {
+				return errors.New("candidate is not online")
 			}
 
 			signed, err := cmd.isSigned(lastBlock)
@@ -119,6 +146,7 @@ func (cmd *Command) Command() *cli.Command {
 			}
 
 			cmd.lastBlock = lastBlock
+			cmd.controlAddress = candidate.ControlAddress
 
 			return cmd.run()
 		},
@@ -130,6 +158,7 @@ func (cmd *Command) run() error {
 		WithField("missed_blocks_threshold", cmd.config.Minter.MissedBlocksThreshold).
 		WithField("sleep", cmd.config.Minter.Sleep).
 		WithField("missed_block_remove_after", cmd.config.Minter.MissedBlockRemoveAfter).
+		WithField("control_address", cmd.controlAddress).
 		Println("Watcher started")
 
 	ticker := time.NewTicker(time.Duration(cmd.config.Minter.Sleep) * time.Second)
@@ -244,13 +273,29 @@ func (cmd *Command) sendBotMessage(message string) {
 
 func (cmd *Command) turnOffMasternode() error {
 	if cmd.dryRun {
-		cmd.newLogEntry(cmd.lastBlock).Warn("⚠️ Dry start. Masternode is still on!")
+		cmd.newLogEntry(cmd.lastBlock).Warn("⚠️ Dry run. Masternode is still on!")
 		return nil
 	}
 
 	go cmd.sendBotMessage("🚨 Setting masternode off...")
 
-	resp, err := cmd.minter.SendTransaction(cmd.config.Minter.TransactionOff)
+	tx := cmd.config.Minter.TransactionOff
+
+	if len(cmd.config.Minter.Seeds) > 0 {
+		t, err := cmd.minter.GenerateCandidateOffTransaction(
+			cmd.config.Minter.PublicKey,
+			cmd.controlAddress,
+			cmd.config.Minter.Seeds...,
+		)
+
+		if err != nil {
+			cmd.log.Errorf("failed to generate transaction: %s", err)
+		} else {
+			tx = t
+		}
+	}
+
+	resp, err := cmd.minter.SendTransaction(tx)
 
 	if err != nil {
 		return err

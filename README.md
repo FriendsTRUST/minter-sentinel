@@ -31,25 +31,71 @@ make build
 
 Docker image `friendstrust/minter-sentinel` is available on [Docker Hub](https://hub.docker.com/r/friendstrust/minter-sentinel).
 
+`docker-compose.yml` example:
+
+```yaml
+version: '3'
+
+services:
+  app:
+    image: friendstrust/minter-sentinel:2
+    ports:
+      - "127.0.0.1:2112:2112"
+    volumes:
+      - ./config.yaml:/config.yaml
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+```
+
 ### Binary
 
 Download the latest release version from https://github.com/friendstrust/minter-sentinel/releases
 
 ## Configuration
 
-Create config.yaml based on the config.example.yaml file.
+Create config.yaml based on the [config.example.yaml](https://github.com/FriendsTRUST/minter-sentinel/blob/master/config.example.yaml) file.
 
 ## Usage
 
-### Transaction Generator
+### "Turn off" transaction
 
-Before starting watcher, you need to generate transaction to turn off your masternode. 
+In order to turn off validator when the missed blocks threshold exceeds,
+you need either generate transaction manually beforehand or define private keys of controlling wallet in configuration file.
 
-You can do it using `txgenerate` command:
+Seeds take precedence when turning off masternode, but, if watcher fails to generate transaction, `transaction_off` will be used.
+
+#### Manual
+
+In order to generate transaction, you can use `txgenerate` command:
 
 ```bash
 ./minter-sentinel txgenerate
 ```
+
+The resulting transaction hash should be set in `transaction_off` parameter in configuration file.
+
+#### Automatic
+
+In order to automatically generate transactions, you need to get seed(s) using `seeds` command:
+
+```bash
+./minter-sentinel seeds
+```
+
+The resulting seeds paste in `private_keys` parameter as an array in configuration file.
+
+Controlling wallet address will be fetched automatically from the Node API.
 
 ### Watcher
 

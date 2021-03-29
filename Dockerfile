@@ -22,3 +22,4 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo/
 COPY --from=builder /minter-sentinel /usr/bin/minter-sentinel
 
 ENTRYPOINT ["/usr/bin/minter-sentinel"]
+CMD ["--config", "/config.yaml", "start"]

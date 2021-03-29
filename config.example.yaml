@@ -1,18 +1,23 @@
 telegram:
   # Leave empty if you don't want to receive Telegram notifications
   token: ''
+  # You can get your ID from @myidbot
   admins:
-    # You can get your ID from @myidbot
     # - 12345
 
 minter:
   testnet: true
+  # List of Node API URLs
   node_api:
     - https://node-api.testnet.minter.network/v2
   # Public key of validator
   public_key: ""
   # Transaction to turn off masternode. Use txgenerate command to generate one
   transaction_off: ""
+  # Seed(s) to automatically generate transactions (1 in case of single controlling wallet, 2 and more in case of multisig)
+  # Control address is fetched automatically from the Node API
+  seeds:
+    # -
   # Missed blocks threshold before masternode will go off
   missed_blocks_threshold: 4
   # Number of seconds to sleep between checking for missed blocks

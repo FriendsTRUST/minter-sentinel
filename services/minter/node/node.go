@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/MinterTeam/minter-go-sdk/v2/transaction"
 	"github.com/MinterTeam/minter-go-sdk/v2/wallet"
@@ -14,6 +13,7 @@ import (
 
 const (
 	status          = "/status"
+	candidate       = "/candidate/{candidate}"
 	getBlock        = "/block/{height}"
 	getAddress      = "/address/{address}"
 	sendTransaction = "/send_transaction"
@@ -66,6 +66,25 @@ func (svc *Service) Status() (*StatusResponse, error) {
 	return &res, err
 }
 
+func (svc *Service) GetCandidate(publicKey string) (*CandidateResponse, error) {
+	var res CandidateResponse
+
+	r, err := svc.http.R().
+		SetPathParam("candidate", publicKey).
+		SetResult(&res).
+		Get(candidate)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if r.StatusCode() != 200 {
+		return &res, &CandidateNotFound{}
+	}
+
+	return &res, err
+}
+
 func (svc *Service) GetBlock(height int) (*GetBlockResponse, error) {
 	var resp *resty.Response
 	var err error
@@ -96,11 +115,11 @@ func (svc *Service) GetBlock(height int) (*GetBlockResponse, error) {
 	return &res, err
 }
 
-func (svc *Service) Wallet(seed string) (*wallet.Wallet, error) {
-	return wallet.Create(seed, "")
+func (svc *Service) Wallet(mnemonic string, seed string) (*wallet.Wallet, error) {
+	return wallet.Create(mnemonic, seed)
 }
 
-func (svc *Service) GenerateCandidateOffTransaction(publicKey string, wallet *wallet.Wallet, privateKey ...string) (string, error) {
+func (svc *Service) GenerateCandidateOffTransaction(publicKey string, walletAddress string, seeds ...string) (string, error) {
 	var chainID transaction.ChainID
 	if svc.testnet {
 		chainID = transaction.TestNetChainID
@@ -116,29 +135,56 @@ func (svc *Service) GenerateCandidateOffTransaction(publicKey string, wallet *wa
 		return "", err
 	}
 
-	if len(privateKey) == 1 {
-		tx = tx.SetSignatureType(transaction.SignatureTypeSingle)
-	} else {
-		tx = tx.SetSignatureType(transaction.SignatureTypeMulti)
-	}
-
-	getAddress, err := svc.getAddress(wallet.Address)
+	getAddress, err := svc.getAddress(walletAddress)
 
 	if err != nil {
 		return "", err
 	}
 
-	signedTx, err := tx.
+	tx = tx.
 		SetNonce(getAddress.TransactionCount + 1).
 		SetGasPrice(1).
-		SetGasCoin(0).
-		Sign(strings.Join(privateKey, ""))
+		SetGasCoin(0)
 
-	if err != nil {
-		return "", err
+	var signed transaction.Signed
+
+	if len(seeds) == 1 {
+		wal, err := svc.Wallet("", seeds[0])
+
+		if err != nil {
+			return "", err
+		}
+
+		s, err := tx.SetSignatureType(transaction.SignatureTypeSingle).Sign(wal.PrivateKey)
+
+		if err != nil {
+			return "", err
+		}
+
+		signed = s
+	} else {
+		var privateKeys []string
+
+		for _, seed := range seeds {
+			wal, err := svc.Wallet("", seed)
+
+			if err != nil {
+				return "", err
+			}
+
+			privateKeys = append(privateKeys, wal.PrivateKey)
+		}
+
+		s, err := tx.SetSignatureType(transaction.SignatureTypeMulti).Sign(walletAddress, privateKeys...)
+
+		if err != nil {
+			return "", err
+		}
+
+		signed = s
 	}
 
-	return signedTx.Encode()
+	return signed.Encode()
 }
 
 func (svc *Service) SendTransaction(tx string) (*SendTransactionResponse, error) {

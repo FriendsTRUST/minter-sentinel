@@ -1,6 +1,7 @@
 package main
 
 import (
+	"minter-sentinel/cmd/seeds"
 	"minter-sentinel/cmd/start"
 	"minter-sentinel/cmd/txgenerate"
 	"minter-sentinel/config"
@@ -19,12 +20,13 @@ func main() {
 
 	var cfg config.Config
 
+	seedsCmd := seeds.New(log, &cfg)
 	startCmd := start.New(log, &cfg)
 	txGenerateCmd := txgenerate.New(log, &cfg)
 
 	app := &cli.App{
 		Name:     "minter-sentinel",
-		Version:  "1.0.0",
+		Version:  "2.1.0",
 		Usage:    "Watch for missed blocks",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
@@ -53,6 +55,7 @@ func main() {
 			return nil
 		},
 		Commands: []*cli.Command{
+			seedsCmd.Command(),
 			startCmd.Command(),
 			txGenerateCmd.Command(),
 		},

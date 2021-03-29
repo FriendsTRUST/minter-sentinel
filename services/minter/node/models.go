@@ -7,6 +7,13 @@ type StatusResponse struct {
 	CatchingUp        bool `json:"catching_up"`
 }
 
+type CandidateResponse struct {
+	ControlAddress string `json:"control_address"`
+	Status         int    `json:"status,string"`
+	Validator      bool   `json:"validator"`
+	JailedUntil    int    `json:"jailed_until,string"`
+}
+
 type GetBlockResponse struct {
 	Hash             string        `json:"hash"`
 	Height           string        `json:"height"`

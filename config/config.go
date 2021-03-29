@@ -20,6 +20,7 @@ type Minter struct {
 	NodeApi                []string `yaml:"node_api"`
 	PublicKey              string   `yaml:"public_key"`
 	TransactionOff         string   `yaml:"transaction_off"`
+	Seeds                  []string `yaml:"seeds"`
 	MissedBlocksThreshold  int      `yaml:"missed_blocks_threshold"`
 	Sleep                  int      `yaml:"sleep"`
 	MissedBlockRemoveAfter int      `yaml:"missed_block_remove_after"`

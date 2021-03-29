@@ -2,6 +2,13 @@ package node
 
 import "fmt"
 
+type CandidateNotFound struct {
+}
+
+func (e *CandidateNotFound) Error() string {
+	return "candidate not found"
+}
+
 type BlockNotFound struct {
 	resp *GetBlockResponse
 }
